@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="kaa">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <meta name="theme-color" content="#0d1f15"/>
+  <meta name="description" content="EcoMap Qaraqalpaqstan — Ekologiyaliq platforması v3"/>
+  <title>EcoMap KR 🌿</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <!-- Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
+  <!-- App CSS -->
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<div id="app-wrapper">
+
+  <!-- ── GLOBAL UI ──────────────────────────────────── -->
+  <div id="progress-bar" class="progress-bar"></div>
+  <div id="toast-wrap"   class="toast-wrap"></div>
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Backdrops -->
+  <div id="backdrop"       class="backdrop" onclick="closeAllSheets()"></div>
+  <div id="modal-backdrop" class="backdrop" style="z-index:9998;" onclick="closeAllModals()"></div>
+
+  <!-- AI Analyzing Overlay (orbiting particles) -->
+  <div id="ai-loading-overlay" class="ai-loading-overlay">
+    <div class="ai-loading-card">
+      <div class="ai-orb">
+        <div class="orb-ring-2"></div>
+        <div class="orb-ring"></div>
+        <div class="orb-core">
+          <span class="material-symbols-outlined">psychology</span>
+        </div>
+      </div>
+      <div id="ai-loading-text"  class="ai-loading-text"></div>
+      <div id="ai-loading-sub"   class="ai-loading-sub"></div>
+      <div class="ai-loading-dots">
+        <div class="ai-dot"></div>
+        <div class="ai-dot"></div>
+        <div class="ai-dot"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Before/After Slider Overlay -->
+  <div id="ba-overlay" class="ba-overlay">
+    <div id="ba-title-text" class="ba-title"></div>
+    <div id="ba-slider-wrap" class="ba-slider-wrap">
+      <img id="ba-img-before" class="ba-img-before" alt="Before" src=""/>
+      <img id="ba-img-after"  class="ba-img-after"  alt="After"  src=""/>
+      <div id="ba-divider" class="ba-divider">
+        <div class="ba-handle"></div>
+      </div>
+    </div>
+    <div class="ba-labels">
+      <span id="ba-label-before" class="ba-label-before"></span>
+      <span id="ba-label-after"  class="ba-label-after"></span>
+    </div>
+    <button class="ba-close-btn" onclick="closeBeforeAfter()" id="ba-close-text"></button>
+  </div>
+
+  <!-- ════════════ APP ════════════ -->
+  <div id="app">
+
+    <!-- ── SCREEN 0: ONBOARDING / AUTH ─────────────── -->
+    <div id="screen-onboarding" class="screen active">
+      <div class="onboard-bg"></div>
+      <div class="onboard-content">
+
+        <div class="onboard-logo">
+          <span class="material-symbols-outlined">eco</span>
+        </div>
+
+        <p  class="onboard-eyebrow"      id="ob-eyebrow"></p>
+        <h1 class="onboard-title"        id="ob-title"></h1>
+        <p  class="onboard-title-accent" id="ob-accent"></p>
+        <p  class="onboard-sub"          id="ob-sub"></p>
+
+        <div class="feature-grid">
+          <div class="feature-card fade-up stagger-1">
+            <span class="material-symbols-outlined">photo_camera</span>
+            <div class="fc-title" id="f1-title"></div>
+            <div class="fc-desc"  id="f1-desc"></div>
+          </div>
+          <div class="feature-card fade-up stagger-2">
+            <span class="material-symbols-outlined">map</span>
+            <div class="fc-title" id="f2-title"></div>
+            <div class="fc-desc"  id="f2-desc"></div>
+          </div>
+          <div class="feature-card fade-up stagger-3">
+            <span class="material-symbols-outlined">cleaning_services</span>
+            <div class="fc-title" id="f3-title"></div>
+            <div class="fc-desc"  id="f3-desc"></div>
+          </div>
+          <div class="feature-card fade-up stagger-4">
+            <span class="material-symbols-outlined">emoji_events</span>
+            <div class="fc-title" id="f4-title"></div>
+            <div class="fc-desc"  id="f4-desc"></div>
+          </div>
+        </div>
+
+        <div class="auth-box">
+          <label class="auth-label" id="label-email" for="auth-email"></label>
+          <input id="auth-email" type="text" inputmode="email" class="auth-input" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/>
+          <label class="auth-label" id="label-password" for="auth-password" style="margin-top:6px;"></label>
+          <input id="auth-password" type="password" class="auth-input" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();handleLogin();}"/>
+          <div class="btn-row" style="margin-bottom:0;">
+            <button id="login-btn" class="btn btn-primary" style="font-size:13px;padding:12px 16px;" onclick="handleLogin()">
+              <span class="material-symbols-outlined" style="font-size:16px;">login</span>
+              <span id="btn-login-text"></span>
+            </button>
+            <button id="register-btn" class="btn btn-outline" style="font-size:12px;padding:12px 14px;" onclick="handleRegister()">
+              <span id="btn-register-text"></span>
+            </button>
+          </div>
+          <div class="auth-divider"><span id="divider-text"></span></div>
+          <button class="btn btn-outline" style="font-size:13px;padding:11px;" onclick="enterDemoMode()">
+            <span class="material-symbols-outlined" style="font-size:15px;">play_arrow</span>
+            <span id="btn-demo-text"></span>
+          </button>
+        </div>
+
+        <p id="app-version" style="margin-top:28px;font-size:10px;color:rgba(255,255,255,.2);text-align:center;font-family:var(--font-label);"></p>
+      </div>
+    </div>
+
+    <!-- ── SCREEN 1: MAP ────────────────────────────── -->
+    <div id="screen-map" class="screen">
+      <div id="map-container">
+        <div id="leaflet-map"></div>
+
+        <!-- Top bar -->
+        <div class="map-top-bar">
+          <div class="glass map-brand-pill">
+            <div class="map-brand-logo">
+              <span class="material-symbols-outlined">eco</span>
+            </div>
+            <span class="map-brand-title" id="map-brand-text"></span>
+          </div>
+          <!-- Streak badge 🔥 -->
+          <div class="streak-badge">
+            🔥 <span id="streak-badge-val">0</span>
+          </div>
+          <!-- Points pill -->
+          <div class="glass map-points-pill" onclick="showScreen('screen-profile')">
+            <span class="material-symbols-outlined icon-fill" style="font-size:16px;color:var(--amber);">stars</span>
+            <span class="map-points-val" id="map-points-val">0</span>
+            <span class="map-points-label" id="map-pts-label"></span>
+          </div>
+        </div>
+
+        <!-- Env panel -->
+        <div class="env-panel glass">
+          <div class="env-stat">
+            <span class="env-label" id="env-weather-label"></span>
+            <span class="env-val">
+              <span class="material-symbols-outlined icon-fill" style="font-size:12px;color:var(--tertiary);">device_thermostat</span>
+              <span id="temp-display">—°C</span>
+            </span>
+          </div>
+          <div class="env-sep"></div>
+          <div class="env-stat">
+            <span class="env-label" id="env-aqi-label"></span>
+            <span class="env-val" id="aqi-display" style="color:var(--primary);">
+              <span class="material-symbols-outlined" style="font-size:12px;">air</span>—
+            </span>
+          </div>
+          <div class="env-sep"></div>
+          <div class="env-stat">
+            <span class="env-label" id="env-markers-label"></span>
+            <span class="env-val" style="color:var(--on-surface);">
+              <span class="material-symbols-outlined" style="font-size:12px;">place</span>
+              <span id="marker-count">0</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Side buttons -->
+        <div class="map-side-btns">
+          <button class="map-side-btn glass" onclick="locateUser()" title="GPS">
+            <span class="material-symbols-outlined">my_location</span>
+          </button>
+          <button class="map-side-btn glass" onclick="openRegionSheet()" title="Rayon">
+            <span class="material-symbols-outlined">explore</span>
+          </button>
+          <button class="map-side-btn glass" onclick="openB2BSheet()" title="B2B">
+            <span class="material-symbols-outlined">recycling</span>
+          </button>
+          <button class="map-side-btn glass" onclick="toggleDarkMode()" title="Dark mode">
+            <span class="material-symbols-outlined">dark_mode</span>
+          </button>
+        </div>
+
+        <!-- FAB scan button -->
+        <button class="map-fab" id="map-fab" onclick="startScanFromMap()">
+          <span class="material-symbols-outlined" style="font-size:21px;">photo_camera</span>
+          <span id="fab-label"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── SCREEN 2: SCAN ────────────────────────────── -->
+    <div id="screen-scan" class="screen">
+
+      <!--
+        FIX #1: NO capture="environment" — input hidden, triggered by label
+        The scan-hero div itself acts as the clickable label target
+      -->
+      <label for="file-input" style="display:block;cursor:pointer;">
+        <div class="scan-hero" id="scan-hero">
+          <div class="scan-hero-empty" id="scan-hero-empty">
+            <span class="material-symbols-outlined">add_a_photo</span>
+            <p  id="scan-empty-text"></p>
+            <small id="scan-empty-small"></small>
+          </div>
+          <img id="scan-preview-img" class="scan-preview-img" src="" alt=""
+               style="display:none;width:100%;height:100%;object-fit:cover;"/>
+          <div id="scan-hero-overlay" class="scan-hero-overlay"></div>
+
+          <!-- AI badge (bottom-left of hero) -->
+          <div class="scan-ai-badge glass" id="scan-ai-badge">
+            <div class="badge-icon">
+              <span class="material-symbols-outlined">psychology</span>
+            </div>
+            <div>
+              <div class="badge-label" id="scan-ai-label"></div>
+              <div class="badge-val"   id="scan-ai-type">—</div>
+            </div>
+          </div>
+
+          <!-- Points badge (top-right of hero) -->
+          <div class="scan-points-badge glass-green" id="scan-points-badge">
+            <span class="material-symbols-outlined icon-fill" style="font-size:13px;">add_circle</span>
+            <span id="scan-points-text">+2 ball</span>
+          </div>
+        </div>
+      </label>
+
+      <!--
+        FIX #1: accept="image/*" ONLY — no capture attribute
+        Hidden but accessible, triggered by the label above
+      -->
+      <input type="file" id="file-input" accept="image/*"
+             style="opacity:0;position:absolute;z-index:-1;width:1px;height:1px;"
+             onchange="onPhotoSelected(event)"/>
+
+      <!-- After-photo input (for cleaner flow) -->
+      <input type="file" id="after-file-input" accept="image/*"
+             style="opacity:0;position:absolute;z-index:-1;width:1px;height:1px;"
+             onchange="onAfterPhotoSelected(event)"/>
+
+      <!-- Scan body -->
+      <div class="scan-body">
+        <p class="scan-eyebrow" id="scan-eyebrow"></p>
+        <h2 class="scan-title"  id="scan-title"></h2>
+
+        <!-- Description textarea + voice button (NEW) -->
+        <div class="desc-row">
+          <textarea id="scan-desc-input" class="desc-textarea" rows="2"></textarea>
+          <button id="voice-btn" class="voice-btn" onclick="toggleVoiceInput()" title="">
+            <span class="material-symbols-outlined">mic</span>
+          </button>
+        </div>
+
+        <!-- AI result card -->
+        <div class="ai-result" id="ai-result-card">
+          <div class="ai-result-header">
+            <span class="ai-result-eyebrow" id="scan-ai-natiya"></span>
+            <span class="level-badge level-1" id="ai-level-badge"></span>
+          </div>
+          <p class="ai-comment" id="ai-comment"></p>
+        </div>
+
+        <!-- Action cards -->
+        <div class="action-cards">
+
+          <!-- Analyze button — shown after photo selected -->
+          <button class="action-card featured" id="btn-analyze"
+                  onclick="startAnalysisFlow()" style="display:none;">
+            <div class="ac-icon ac-green">
+              <span class="material-symbols-outlined">psychology</span>
+            </div>
+            <div class="ac-info">
+              <div class="ac-tag"   style="color:var(--primary);" id="scan-c1-tag"></div>
+              <div class="ac-title" id="scan-c1-title"></div>
+              <div class="ac-desc"  id="scan-c1-desc"></div>
+            </div>
+            <span class="material-symbols-outlined ac-arrow">chevron_right</span>
+          </button>
+
+          <!-- Photo pick card — label wraps it for file input trigger -->
+          <label for="file-input" style="display:block;">
+            <div class="action-card" style="cursor:pointer;">
+              <div class="ac-icon ac-green">
+                <span class="material-symbols-outlined">add_a_photo</span>
+              </div>
+              <div class="ac-info">
+                <div class="ac-tag"   style="color:var(--primary);" id="scan-c2-tag"></div>
+                <div class="ac-title" id="scan-c2-title"></div>
+                <div class="ac-desc"  id="scan-c2-desc"></div>
+              </div>
+              <span class="material-symbols-outlined ac-arrow">chevron_right</span>
+            </div>
+          </label>
+
+          <button class="action-card" onclick="openB2BSheet()">
+            <div class="ac-icon ac-teal">
+              <span class="material-symbols-outlined">business</span>
+            </div>
+            <div class="ac-info">
+              <div class="ac-tag"   style="color:var(--tertiary);" id="scan-c3-tag"></div>
+              <div class="ac-title" id="scan-c3-title"></div>
+              <div class="ac-desc"  id="scan-c3-desc"></div>
+            </div>
+            <span class="material-symbols-outlined ac-arrow">chevron_right</span>
+          </button>
+
+          <button class="action-card" onclick="showScreen('screen-map')">
+            <div class="ac-icon ac-amber">
+              <span class="material-symbols-outlined">map</span>
+            </div>
+            <div class="ac-info">
+              <div class="ac-tag"   style="color:#b45309;" id="scan-c4-tag"></div>
+              <div class="ac-title" id="scan-c4-title"></div>
+              <div class="ac-desc"  id="scan-c4-desc"></div>
+            </div>
+            <span class="material-symbols-outlined ac-arrow">chevron_right</span>
+          </button>
+
+        </div><!-- /action-cards -->
+        <div style="height:16px;"></div>
+      </div><!-- /scan-body -->
+    </div><!-- /screen-scan -->
+
+    <!-- ── SCREEN 3: ECOLOGY ─────────────────────────── -->
+    <div id="screen-eco" class="screen">
+      <div class="eco-header">
+        <h2 id="eco-tab-title"></h2>
+        <p  id="eco-header-sub" style="opacity:.7;font-size:11px;"></p>
+      </div>
+
+      <!-- Loading state -->
+      <div id="eco-loading" class="eco-loading" style="display:flex;">
+        <div class="spinner spinner-green" style="width:28px;height:28px;"></div>
+        <span id="eco-loading-label" style="font-size:13px;color:var(--outline-var);"></span>
+      </div>
+
+      <!-- Content (shown after load) -->
+      <div id="eco-content" class="screen-content" style="display:none;padding:0;">
+        <div class="eco-body">
+
+          <!-- Weather card -->
+          <div class="weather-main-card glass">
+            <div class="weather-top">
+              <div>
+                <div class="weather-temp" id="eco-temp-val">—</div>
+                <div class="weather-feels">
+                  <span id="eco-feels-label"></span>: <span id="eco-feels-val">—</span>
+                </div>
+              </div>
+              <div class="weather-icon-wrap">
+                <span class="material-symbols-outlined icon-fill">wb_sunny</span>
+              </div>
+            </div>
+            <div class="weather-desc" id="eco-desc-val">—</div>
+            <div class="weather-stats">
+              <div class="wstat">
+                <span class="wstat-label" id="eco-hum-label"></span>
+                <span class="wstat-val"   id="eco-hum-val">—</span>
+              </div>
+              <div class="wstat">
+                <span class="wstat-label" id="eco-wind-label"></span>
+                <span class="wstat-val"   id="eco-wind-val">—</span>
+              </div>
+              <div class="wstat">
+                <span class="wstat-label" id="eco-temp-label"></span>
+                <span class="wstat-val"   id="eco-temp-val2">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- AQI card -->
+          <div class="aqi-card glass">
+            <div class="aqi-top">
+              <div>
+                <div style="font-family:var(--font-label);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--outline-var);margin-bottom:4px;"
+                     id="eco-aqi-label-header"></div>
+                <div class="aqi-num" id="eco-aqi-num">—</div>
+                <div class="aqi-label-text" id="eco-aqi-label-text">—</div>
+              </div>
+              <div>
+                <div class="aqi-pm" style="text-align:center;">
+                  <div class="aqi-pm-label" id="eco-pm25-label"></div>
+                  <div class="aqi-pm-val"   id="eco-pm25-val">—</div>
+                </div>
+              </div>
+            </div>
+            <div class="aqi-bar-wrap">
+              <div class="aqi-bar" id="eco-aqi-bar" style="width:0%"></div>
+            </div>
+            <div class="aqi-scale">
+              <span>0</span><span>50</span><span>100</span><span>150</span><span>200+</span>
+            </div>
+            <div class="aqi-pm-row">
+              <div class="aqi-pm">
+                <div class="aqi-pm-label" id="eco-pm10-label"></div>
+                <div class="aqi-pm-val"   id="eco-pm10-val">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action buttons -->
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost" style="flex:1;border-radius:var(--r-lg);"
+                    onclick="refreshWeather()">
+              <span class="material-symbols-outlined" style="font-size:16px;">refresh</span>
+              <span id="eco-refresh-btn"></span>
+            </button>
+            <button id="eco-consult-btn" class="btn btn-primary" style="flex:2;border-radius:var(--r-lg);"
+                    onclick="getAIConsultation()">
+              <span class="material-symbols-outlined" style="font-size:16px;">smart_toy</span>
+              <span id="eco-consult-btn-text"></span>
+            </button>
+          </div>
+
+          <!-- AI Consult loading -->
+          <div id="eco-consult-loading"
+               style="display:none;flex-direction:column;align-items:center;gap:10px;padding:20px;">
+            <div class="spinner spinner-green" style="width:26px;height:26px;"></div>
+            <span id="eco-consult-loading-text"
+                  style="font-size:13px;color:var(--outline-var);"></span>
+          </div>
+
+          <!-- AI Consult result -->
+          <div id="eco-consult-box" class="consult-card glass" style="display:none;">
+            <div class="consult-header">
+              <span class="material-symbols-outlined icon-fill"
+                    style="font-size:22px;color:var(--primary);">smart_toy</span>
+              <h3 id="eco-consult-title-text"></h3>
+            </div>
+            <div class="consult-body">
+              <div id="eco-consult-greeting"
+                   style="font-size:13px;font-style:italic;color:var(--on-surface-var);
+                          padding:10px;background:rgba(41,102,76,.06);border-radius:var(--r-lg);
+                          margin-bottom:4px;"></div>
+              <div class="consult-section">
+                <div class="consult-section-title" id="eco-section-clothes"></div>
+                <p id="eco-consult-clothes"></p>
+              </div>
+              <div class="consult-section">
+                <div class="consult-section-title" id="eco-section-health"></div>
+                <p id="eco-consult-health"></p>
+              </div>
+              <div class="consult-section">
+                <div class="consult-section-title" id="eco-section-outdoor"></div>
+                <p id="eco-consult-outdoor"></p>
+              </div>
+              <div class="consult-section">
+                <div class="consult-section-title" id="eco-section-tips"></div>
+                <div id="eco-consult-tips" class="consult-tips"></div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /eco-body -->
+      </div><!-- /eco-content -->
+    </div><!-- /screen-eco -->
+
+    <!-- ── SCREEN 4: LEADERBOARD ─────────────────────── -->
+    <div id="screen-leaderboard" class="screen">
+      <div class="lb-hero">
+        <h2 id="lb-title"></h2>
+        <p  id="lb-sub"></p>
+        <div class="lb-top3" id="lb-top3"><!-- populated by JS --></div>
+      </div>
+
+      <div class="screen-content">
+
+        <!-- Weekly Missions -->
+        <div class="missions-card glass" style="margin:14px 14px 0;">
+          <div class="missions-header">
+            <h3 id="lb-mission-title"></h3>
+          </div>
+          <div class="mission-item">
+            <span class="mission-icon">🏅</span>
+            <span class="mission-text" id="lb-m1"></span>
+            <span class="mission-badge">1GB</span>
+          </div>
+          <div class="mission-item">
+            <span class="mission-icon">🎬</span>
+            <span class="mission-text" id="lb-m2"></span>
+            <span class="mission-badge">Chipta</span>
+          </div>
+          <div class="mission-item">
+            <span class="mission-icon">👑</span>
+            <span class="mission-text" id="lb-m3"></span>
+            <span class="mission-badge">Badge</span>
+          </div>
+        </div>
+
+        <!-- Data Science Charts -->
+        <div class="charts-section">
+          <div id="lb-chart-title"
+               style="font-family:var(--font-head);font-size:15px;font-weight:900;
+                      color:var(--on-surface);padding:0 2px;"></div>
+
+          <!-- Bar chart -->
+          <div class="chart-card glass">
+            <div class="chart-header">
+              <h3 id="lb-chart-polluted"></h3>
+              <p>Belgiler soni boyınsha</p>
+            </div>
+            <div class="bar-chart" id="bar-chart-body"><!-- JS --></div>
+          </div>
+
+          <!-- Donut chart -->
+          <div class="chart-card glass">
+            <div class="chart-header">
+              <h3 id="lb-chart-waste"></h3>
+              <p>Qaldıq türleri boyınsha</p>
+            </div>
+            <div class="donut-wrap" id="donut-wrap"><!-- JS --></div>
+          </div>
+        </div>
+
+        <!-- Leaderboard rows -->
+        <div class="lb-list" id="lb-list"><!-- JS --></div>
+
+      </div>
+    </div><!-- /screen-leaderboard -->
+
+    <!-- ── SCREEN 5: PROFILE ──────────────────────────── -->
+    <div id="screen-profile" class="screen">
+      <div class="screen-content">
+
+        <div class="prof-hero">
+          <div class="prof-avatar-wrap">
+            <div class="prof-avatar" id="prof-avatar">?</div>
+            <button class="prof-edit-btn">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+          </div>
+          <div class="prof-name"  id="prof-name">—</div>
+          <div class="prof-email" id="prof-email">—</div>
+          <div class="prof-stats">
+            <div class="prof-stat">
+              <div class="prof-stat-val"   id="prof-points">0</div>
+              <div class="prof-stat-label" id="prof-label-bal"></div>
+            </div>
+            <div class="prof-stat">
+              <div class="prof-stat-val"   id="prof-reports">0</div>
+              <div class="prof-stat-label" id="prof-label-belgiler"></div>
+            </div>
+            <div class="prof-stat">
+              <div class="prof-stat-val"   id="prof-cleanups">0</div>
+              <div class="prof-stat-label" id="prof-label-tazalaw"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prof-content">
+          <div class="prof-section-title" id="prof-sec-faoliyat"></div>
+
+          <button class="prof-menu-item" onclick="showScreen('screen-map')">
+            <div class="pmi-icon pmi-green"><span class="material-symbols-outlined">map</span></div>
+            <div><div class="pmi-label" id="pmi-map"></div><div class="pmi-sub" id="pmi-map-sub"></div></div>
+            <span class="material-symbols-outlined pmi-arrow">chevron_right</span>
+          </button>
+
+          <button class="prof-menu-item" onclick="showScreen('screen-leaderboard')">
+            <div class="pmi-icon pmi-amber"><span class="material-symbols-outlined">emoji_events</span></div>
+            <div><div class="pmi-label" id="pmi-lb"></div><div class="pmi-sub" id="pmi-lb-sub"></div></div>
+            <span class="material-symbols-outlined pmi-arrow">chevron_right</span>
+          </button>
+
+          <button class="prof-menu-item" onclick="openB2BSheet()">
+            <div class="pmi-icon pmi-teal"><span class="material-symbols-outlined">recycling</span></div>
+            <div><div class="pmi-label" id="pmi-b2b"></div><div class="pmi-sub" id="pmi-b2b-sub"></div></div>
+            <span class="material-symbols-outlined pmi-arrow">chevron_right</span>
+          </button>
+
+          <button class="prof-menu-item" onclick="showScreen('screen-eco')">
+            <div class="pmi-icon pmi-teal"><span class="material-symbols-outlined">eco</span></div>
+            <div><div class="pmi-label" id="pmi-eco"></div><div class="pmi-sub" id="pmi-eco-sub"></div></div>
+            <span class="material-symbols-outlined pmi-arrow">chevron_right</span>
+          </button>
+
+          <div class="prof-section-title" id="prof-sec-settings"></div>
+
+          <button class="prof-menu-item">
+            <div class="pmi-icon pmi-green"><span class="material-symbols-outlined">person</span></div>
+            <div><div class="pmi-label" id="pmi-settings"></div><div class="pmi-sub" id="pmi-settings-sub"></div></div>
+            <span class="material-symbols-outlined pmi-arrow">chevron_right</span>
+          </button>
+
+          <button class="prof-menu-item">
+            <div class="pmi-icon pmi-amber"><span class="material-symbols-outlined">notifications</span></div>
+            <div><div class="pmi-label" id="pmi-notif"></div><div class="pmi-sub" id="pmi-notif-sub"></div></div>
+            <span class="material-symbols-outlined pmi-arrow">chevron_right</span>
+          </button>
+
+          <!-- Dark mode toggle -->
+          <div class="prof-menu-item" onclick="toggleDarkMode()" style="cursor:pointer;">
+            <div class="pmi-icon pmi-gray"><span class="material-symbols-outlined">dark_mode</span></div>
+            <div style="flex:1;">
+              <div class="pmi-label" id="pmi-dark"></div>
+              <div class="pmi-sub"   id="pmi-dark-sub"></div>
+            </div>
+            <button id="dark-mode-toggle" class="pmi-toggle"
+                    onclick="event.stopPropagation();toggleDarkMode()"></button>
+          </div>
+
+          <!-- Logout -->
+          <button class="prof-menu-item" onclick="handleLogout()"
+                  style="justify-content:center;background:rgba(179,27,37,.07);border-color:rgba(179,27,37,.15);">
+            <div class="pmi-icon pmi-red"><span class="material-symbols-outlined">logout</span></div>
+            <div class="pmi-label" id="pmi-logout" style="color:var(--error);"></div>
+          </button>
+        </div>
+
+      </div>
+    </div><!-- /screen-profile -->
+
+    <!-- ── BOTTOM NAV — 5 TABS ───────────────────────── -->
+    <nav id="bottom-nav" style="display:none;">
+      <div class="nav-item active" id="nav-map"     onclick="showScreen('screen-map')">
+        <span class="material-symbols-outlined">map</span>
+        <span class="nav-label" id="nav-map-label"></span>
+      </div>
+      <div class="nav-item" id="nav-scan"    onclick="showScreen('screen-scan')">
+        <span class="material-symbols-outlined">qr_code_scanner</span>
+        <span class="nav-label" id="nav-scan-label"></span>
+      </div>
+      <div class="nav-item" id="nav-eco"     onclick="showScreen('screen-eco')">
+        <span class="material-symbols-outlined">eco</span>
+        <span class="nav-label" id="nav-eco-label"></span>
+      </div>
+      <div class="nav-item" id="nav-lb"      onclick="showScreen('screen-leaderboard')">
+        <span class="material-symbols-outlined">leaderboard</span>
+        <span class="nav-label" id="nav-lb-label"></span>
+      </div>
+      <div class="nav-item" id="nav-profile" onclick="showScreen('screen-profile')">
+        <span class="material-symbols-outlined">person</span>
+        <span class="nav-label" id="nav-profile-label"></span>
+      </div>
+    </nav>
+
+  </div><!-- /#app -->
+
+  <!-- ════════════ BOTTOM SHEETS ════════════ -->
+
+  <!-- Region sheet -->
+  <div class="bottom-sheet" id="region-sheet">
+    <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
+    <div class="sheet-header">
+      <span class="sheet-title" id="region-sheet-title"></span>
+      <button class="sheet-close" onclick="closeSheet('region-sheet')">
+        <span class="material-symbols-outlined" style="font-size:15px;">close</span>
+      </button>
+    </div>
+    <div class="sheet-body" id="region-list"></div>
+  </div>
+
+  <!-- B2B sheet -->
+  <div class="bottom-sheet" id="b2b-sheet">
+    <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
+    <div class="sheet-header">
+      <span class="sheet-title" id="b2b-sheet-title"></span>
+      <button class="sheet-close" onclick="closeSheet('b2b-sheet')">
+        <span class="material-symbols-outlined" style="font-size:15px;">close</span>
+      </button>
+    </div>
+    <div id="b2b-filters"
+         style="padding:0 14px 10px;display:flex;gap:7px;overflow-x:auto;
+                scrollbar-width:none;flex-shrink:0;"></div>
+    <div class="sheet-body" id="b2b-list"></div>
+  </div>
+
+  <!-- AI Decision sheet (NEW — shows after Gemini analysis) -->
+  <div class="bottom-sheet" id="decision-sheet">
+    <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
+    <div class="sheet-header">
+      <span class="sheet-title" id="decision-sheet-title"></span>
+      <button class="sheet-close" onclick="closeSheet('decision-sheet')">
+        <span class="material-symbols-outlined" style="font-size:15px;">close</span>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <img id="decision-thumb" class="decision-img-thumb" src="" alt=""
+           style="display:none;"/>
+      <div class="decision-level-row">
+        <div class="decision-type" id="decision-type-text">—</div>
+        <span class="level-badge level-1" id="decision-level-badge"></span>
+      </div>
+      <div class="decision-street" id="decision-street"></div>
+      <div class="decision-comment" id="decision-comment"></div>
+      <div class="decision-btns">
+        <button id="decision-confirm-btn" class="btn-confirm btn">
+          <span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>
+          <span id="decision-confirm-btn-text"></span>
+        </button>
+        <button id="decision-reject-btn" class="btn-reject btn">
+          <span class="material-symbols-outlined" style="font-size:18px;">cancel</span>
+          <span id="decision-reject-btn-text"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ MODALS ════════════ -->
+
+  <!-- Consent modal -->
+  <div class="modal-overlay" id="consent-modal">
+    <div class="modal-box">
+      <h2 class="modal-title" id="consent-title"></h2>
+      <p  class="modal-body"  id="consent-body"></p>
+      <p  class="modal-note"  id="consent-note"></p>
+      <img id="consent-preview" class="modal-preview" alt="Preview"/>
+      <button class="btn btn-primary mb-8" id="consent-accept-btn"
+              onclick="onConsentAccept()">
+        <span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>
+        <span id="consent-accept-text"></span>
+      </button>
+      <button class="btn btn-danger" onclick="closeModal('consent-modal')"
+              id="consent-decline-text"></button>
+    </div>
+  </div>
+
+  <!-- Cleaner modal -->
+  <div class="modal-overlay" id="cleaner-modal">
+    <div class="modal-box">
+      <h2 class="modal-title" id="cleaner-title"></h2>
+      <p  class="modal-body"  id="cleaner-body"></p>
+
+      <div class="cleaner-steps">
+        <div class="cleaner-step done" id="cstep-1"></div>
+        <div class="cleaner-step"      id="cstep-2"></div>
+        <div class="cleaner-step"      id="cstep-3"></div>
+      </div>
+
+      <!-- FIX #1: label triggers after-file-input (no capture attr) -->
+      <label for="after-file-input" style="display:block;">
+        <div class="photo-drop" id="after-photo-drop">
+          <span class="material-symbols-outlined">cloud_upload</span>
+          <p    id="cleaner-drop-text"></p>
+          <small id="cleaner-drop-small"></small>
+        </div>
+      </label>
+
+      <img id="after-preview" class="modal-preview" alt="After preview"
+           style="margin-top:10px;max-height:200px;"/>
+
+      <div style="height:14px;"></div>
+
+      <button class="btn btn-primary mb-8" id="cleaner-verify-btn"
+              onclick="runCleanerVerification()" disabled style="opacity:0.4;">
+        <span class="material-symbols-outlined" style="font-size:18px;">verified</span>
+        <span id="cleaner-verify-text"></span>
+      </button>
+      <button class="btn btn-danger" onclick="onCleanerCancel()"
+              id="cleaner-cancel-text"></button>
+    </div>
+  </div>
+
+</div><!-- /#app-wrapper -->
+
+<!-- ════════════ SCRIPTS (load order matters!) ════════════ -->
+
+<!-- 1. Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- 2. Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- 3. App data & config -->
+<script src="lang.js"></script>
+<script src="config.js"></script>
+<script src="data.js"></script>
+
+<!-- 4. API layer -->
+<script src="api.js"></script>
+
+<!-- 5. Main application logic -->
+<script src="app.js"></script>
+
+</body>
+</html>
