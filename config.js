@@ -9,7 +9,7 @@ const CONFIG = {
   cloudinaryPreset: "hackaton",  // "ecomap_unsigned"
 
   // Google Gemini: https://aistudio.google.com/app/apikey
-  geminiKey:        "AIzaSyA0brbfbvn2m0C5LPlnfKza208OkLlEZtI",  // "AIzaSy..."
+  geminiKey:        "AIzaSyB7p7wd1-0Rv6eu3NkHqe3N3eetRF-Uhyc",  // "AIzaSy..."
   geminiModel:      "gemini-2.5-flash",
 
   // OpenWeather (optional): https://openweathermap.org/api
